@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard - Dammam</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--txt:#f6f1e3;--dim:rgba(246,241,227,.75);--brass:#d8a74a;--overlay:rgba(8,18,22,0.45)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Tajawal',sans-serif;color:var(--txt);background:#080f13}
+
+#bg-video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+#shade{position:fixed;inset:0;background:var(--overlay);z-index:2}
+
+main{position:relative;z-index:3;height:100%;padding:3vw 4.5vw;display:flex;flex-direction:column;justify-content:space-between}
+
+header{display:flex;justify-content:space-between;align-items:flex-start}
+.weather .city{font-size:2.2vw;font-weight:700}
+.weather .temp{font-size:4.8vw;font-weight:900}
+.weather .desc{font-size:1.6vw;color:var(--dim)}
+
+.date{text-align:right}
+.date .day{font-size:4.8vw;font-weight:900;line-height:0.95}
+.date .greg{font-size:1.8vw}
+.date .hijri{font-size:1.6vw;color:var(--brass);font-weight:700;margin-top:-0.2vw}
+
+/* خط Didot الأنيق للساعة والأرقام */
+.clock-box{text-align:center;margin:auto 0;display:flex;justify-content:center;align-items:flex-end}
+.clock{font-family:'Didot', 'Bodoni MT', serif;font-size:17vw;font-weight:bold;direction:ltr;line-height:0.85;letter-spacing:-2px;text-shadow: 0 15px 40px rgba(0,0,0,0.7);display:flex;align-items:flex-end}
+.am-pm{font-family:'Tajawal', sans-serif;font-size:4vw;font-weight:700;margin-left:15px;margin-bottom:1vw;color:var(--dim)}
+
+.bottom-info{display:flex;justify-content:space-between;align-items:flex-end;font-size:1.8vw;font-weight:700;text-align:left;background:rgba(10,22,27,0.55);backdrop-filter:blur(15px);border:1px solid rgba(246,241,227,0.15);padding:1.5vw 2.5vw;border-radius:1.5vw}
+.bottom-info > div{flex:1}
+.bottom-info h3{font-size:1.4vw;font-weight:400;color:var(--dim);margin-bottom:.2vw}
+.m-teams{font-size:2.2vw;font-weight:900}
+.m-league,.m-time,.rem{font-size:1.4vw;font-weight:400;color:var(--dim);margin-top:.2vw}
+.countdown-box{color:var(--brass);font-variant-numeric:tabular-nums;font-weight:800;font-size:1.5vw;margin-top:0.3vw}
+.footer{position:fixed;bottom:0.5vw;left:0;right:0;text-align:center;font-size:0.9vw;color:rgba(246,241,227,0.4);z-index:3}
+</style>
+</head>
+<body>
+
+<video id="bg-video" autoplay muted loop playsinline>
+  <source src="https://assets.mixkit.co/videos/preview/mixkit-clouds-and-blue-sky-2408-large.mp4" type="video/mp4">
+</video>
+
+<div id="shade"></div>
+
+<main>
+  <header>
+    <div class="weather">
+      <div class="city">Dammam</div>
+      <div class="temp" id="tempC">32°</div>
+      <div class="desc" id="weatherDesc">Clear</div>
+    </div>
+    <div class="date">
+      <div class="day" id="dayName">Friday</div>
+      <div class="greg" id="gregDate">6 Nov 2026</div>
+      <div class="hijri" id="hijriDate">25 Jumada I 1448</div>
+    </div>
+  </header>
+  
+  <div class="clock-box">
+    <div class="clock" id="clock">--:--<span class="am-pm" id="amPm">PM</span></div>
+  </div>
+
+  <section class="bottom-info">
+    <div>
+      <div style="font-size:1.2vw;color:var(--brass)">Next Al-Hilal Match</div>
+      <div class="m-teams" id="matchTeams">Al-Hilal vs Al-Ittihad</div>
+      <div class="m-league" id="matchLeague">Saudi Pro League</div>
+      <div class="m-time" id="matchTime">Saturday, 9:00 PM</div>
+      <div class="countdown-box" id="matchCountdown">Starts in: --:--:--</div>
+    </div>
+    <div style="text-align:center">
+      <h3>Ramadan</h3>
+      <div class="m-teams">115 Days</div>
+      <div class="m-league">Starts March 2025 Approx.</div>
+    </div>
+    <div style="text-align:right">
+      <h3>Next Prayer</h3>
+      <div class="m-teams" id="nextPrayerName">Isha</div>
+      <div class="m-time" id="nextPrayerTime">7:18 PM</div>
+      <div class="rem" id="prayerCountdown">in 12 mins</div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  Dammam Smart Dashboard - Interactive Motion Background
+</footer>
+
+<script>
+var prayers = [
+  { name: 'Fajr', h: 4, m: 32 },
+  { name: 'Dhuhr', h: 11, m: 30 },
+  { name: 'Asr', h: 14, m: 42 },
+  { name: 'Maghrib', h: 17, m: 38 },
+  { name: 'Isha', h: 19, m: 6 }
+];
+
+function pad(n){return (n<10?'0':'')+n;}
+function fmt12(h, m){ 
+  var hour12 = h % 12 || 12;
+  return hour12 + ':' + pad(m); 
+}
+function getAmPm(h){ return h < 12 ? 'AM' : 'PM'; }
+
+function updateDashboard(){
+  var now = new Date();
+  var h = now.getHours(), m = now.getMinutes();
+  
+  var clockEl = document.getElementById('clock');
+  if(clockEl) {
+    clockEl.innerHTML = fmt12(h, m) + '<span class="am-pm">' + getAmPm(h) + '</span>';
+  }
+
+  var nextP = prayers[0];
+  var nextDate = new Date();
+  nextDate.setHours(nextP.h, nextP.m, 0, 0);
+
+  for(var i=0; i<prayers.length; i++){
+    var p = prayers[i];
+    var pDate = new Date();
+    pDate.setHours(p.h, p.m, 0, 0);
+    if(pDate > now){
+      nextP = p;
+      nextDate = pDate;
+      break;
+    }
+    if(i === prayers.length - 1 && pDate <= now){
+      nextDate.setDate(nextDate.getDate() + 1);
+      nextDate.setHours(prayers[0].h, prayers[0].m, 0, 0);
+      nextP = prayers[0];
+    }
+  }
+
+  var pNameEl = document.getElementById('nextPrayerName');
+  var pTimeEl = document.getElementById('nextPrayerTime');
+  var pCountEl = document.getElementById('prayerCountdown');
+
+  if(pNameEl) pNameEl.textContent = nextP.name;
+  if(pTimeEl) pTimeEl.textContent = fmt12(nextDate.getHours(), nextDate.getMinutes()) + ' ' + getAmPm(nextDate.getHours());
+
+  var diff = Math.floor((nextDate - now) / 1000);
+  if(diff < 0) diff = 0;
+  var pHours = Math.floor(diff / 3600);
+  var pMins = Math.floor((diff % 3600) / 60);
+  var pSecs = diff % 60;
+  if(pCountEl) pCountEl.textContent = 'in ' + (pHours > 0 ? pHours + 'h ' : '') + pMins + 'm ' + pad(pSecs) + 's';
+
+  var matchTime = new Date('2026-11-07T21:00:00');
+  var mDiff = Math.floor((matchTime - now) / 1000);
+  if(mDiff > 0) {
+    var days = Math.floor(mDiff / 86400);
+    var hours = Math.floor((mDiff % 86400) / 3600);
+    var mins = Math.floor((mDiff % 3600) / 60);
+    var secs = mDiff % 60;
+    var el = document.getElementById('matchCountdown');
+    if(el) el.textContent = 'Starts in: ' + (days > 0 ? days + 'd ' : '') + pad(hours) + ':' + pad(mins) + ':' + pad(secs);
+  }
+}
+
+updateDashboard();
+setInterval(updateDashboard, 1000);
+</script>
+</body>
+</html>
